@@ -1,0 +1,13 @@
+[package]
+name = "pong-rs"
+version = "1.0.0"
+authors = ["gltchitm"]
+edition = "2018"
+
+[dependencies]
+rand = "0.8.0"
+
+[dependencies.sdl2]
+version = "0.34.3"
+default-features = false
+features = ["ttf"]
