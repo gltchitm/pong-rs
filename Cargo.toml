@@ -1,8 +1,8 @@
 [package]
 name = "pong-rs"
 version = "1.0.0"
-authors = ["gltchitm"]
-edition = "2018"
+authors = ["gltchitm <42951031+gltchitm@users.noreply.github.com>"]
+edition = "2021"
 
 [dependencies]
 rand = "0.8.0"

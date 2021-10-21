@@ -1,10 +1,10 @@
-use super::constants::{ WINDOW_WIDTH, WINDOW_HEIGHT, BALL_MOVEMENT };
+use super::constants::{BALL_MOVEMENT, WINDOW_HEIGHT, WINDOW_WIDTH};
 
-use sdl2::render::Canvas;
-use sdl2::pixels::Color;
-use sdl2::video::Window;
-use sdl2::rect::Point;
 use rand::prelude::random;
+use sdl2::pixels::Color;
+use sdl2::rect::Point;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
 pub struct Ball {
     pub x: i32,
@@ -15,8 +15,8 @@ pub struct Ball {
 
 impl Ball {
     pub const RADIUS: i32 = 13;
-    pub const X_CENTER: i32 = WINDOW_WIDTH / 2 - Ball::RADIUS / 2; 
-    pub const Y_CENTER: i32 = WINDOW_HEIGHT / 2 - Ball::RADIUS / 2; 
+    pub const X_CENTER: i32 = WINDOW_WIDTH / 2 - Ball::RADIUS / 2;
+    pub const Y_CENTER: i32 = WINDOW_HEIGHT / 2 - Ball::RADIUS / 2;
 
     pub fn draw_ball(&self, canvas: &mut Canvas<Window>) {
         canvas.set_draw_color(Color::WHITE);
@@ -25,9 +25,9 @@ impl Ball {
                 let dx = Ball::RADIUS - w;
                 let dy = Ball::RADIUS - h;
                 if dx * dx + dy * dy <= Ball::RADIUS * Ball::RADIUS {
-                    canvas.draw_point(
-                        Point::new(dx + self.x, dy + self.y)
-                    ).unwrap();
+                    canvas
+                        .draw_point(Point::new(dx + self.x, dy + self.y))
+                        .unwrap();
                 }
             }
         }

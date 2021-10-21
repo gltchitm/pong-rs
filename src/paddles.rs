@@ -1,10 +1,10 @@
-use super::constants::{ WINDOW_WIDTH, WINDOW_HEIGHT, PADDING };
 use super::ball::Ball;
+use super::constants::{PADDING, WINDOW_HEIGHT, WINDOW_WIDTH};
 
+use sdl2::pixels::Color;
+use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-use sdl2::rect::Rect;
-use sdl2::pixels::Color;
 
 pub struct Paddles {
     pub left: i32,
@@ -19,7 +19,7 @@ impl Paddles {
     pub const TOP: i32 = PADDING;
     pub const CENTER: i32 = WINDOW_WIDTH / 2 - Paddles::PADDLE_HEIGHT / 2;
     pub const BOTTOM: i32 = WINDOW_HEIGHT - Paddles::PADDLE_HEIGHT - PADDING;
-    
+
     fn draw_paddle(x: i32, y: i32, canvas: &mut Canvas<Window>) {
         let rect = Rect::new(
             x,
@@ -40,15 +40,15 @@ impl Paddles {
         canvas.set_draw_color(Color::BLACK);
     }
     pub fn ball_does_collide_with_left_paddle(&self, ball: &Ball) -> bool {
-        PADDING + Paddles::PADDLE_WIDTH < ball.x + Ball::RADIUS &&
-        PADDING + Paddles::PADDLE_WIDTH * 2 > ball.x &&
-        self.left < ball.y + Ball::RADIUS &&
-        self.left + Paddles::PADDLE_HEIGHT > ball.y
+        PADDING + Paddles::PADDLE_WIDTH < ball.x + Ball::RADIUS
+            && PADDING + Paddles::PADDLE_WIDTH * 2 > ball.x
+            && self.left < ball.y + Ball::RADIUS
+            && self.left + Paddles::PADDLE_HEIGHT > ball.y
     }
     pub fn ball_does_collide_with_right_paddle(&self, ball: &Ball) -> bool {
-        WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH) < ball.x + Ball::RADIUS &&
-        (WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH)) * 2 > ball.x &&
-        self.right < ball.y + Ball::RADIUS &&
-        self.right + Paddles::PADDLE_HEIGHT > ball.y
+        WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH) < ball.x + Ball::RADIUS
+            && (WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH)) * 2 > ball.x
+            && self.right < ball.y + Ball::RADIUS
+            && self.right + Paddles::PADDLE_HEIGHT > ball.y
     }
 }

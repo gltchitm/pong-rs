@@ -1,29 +1,34 @@
 mod ball;
-mod paddles;
-mod welcome;
 mod constants;
-mod scoreboard;
+mod paddles;
 mod pressed_keys;
+mod scoreboard;
+mod welcome;
 
-use sdl2::keyboard::Keycode;
-use std::time::Duration;
-use sdl2::pixels::Color;
 use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
+use std::time::Duration;
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    let window = video_subsystem.window(
-        constants::WINDOW_TITLE,
-        constants::WINDOW_WIDTH as u32,
-        constants::WINDOW_HEIGHT as u32
-    ).position_centered().build().unwrap();
-    let mut canvas = window.into_canvas().build().unwrap();
+    let window = video_subsystem
+        .window(
+            constants::WINDOW_TITLE,
+            constants::WINDOW_WIDTH as u32,
+            constants::WINDOW_HEIGHT as u32
+        )
+        .position_centered()
+        .build()
+        .unwrap();
 
+    let mut canvas = window.into_canvas().build().unwrap();
     canvas.set_draw_color(Color::BLACK);
     canvas.clear();
     canvas.present();
+
     let mut event_pump = sdl_context.event_pump().unwrap();
 
     let mut paddles = paddles::Paddles {
@@ -58,7 +63,7 @@ fn main() {
             paddles.left += paddles.left_movement;
             paddles.right += paddles.right_movement;
             paddles.draw_paddles(&mut canvas);
-    
+
             ball.x += ball.x_movement;
             ball.y += ball.y_movement;
             ball.draw_ball(&mut canvas);
@@ -67,49 +72,74 @@ fn main() {
         } else {
             welcome::draw_welcome(&mut canvas);
         }
-                
+
         for event in event_pump.poll_iter() {
             match event {
-                Event::Quit {..} => {
-                    break 'pong
-                },
-                Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
+                Event::Quit { .. } => break 'pong,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Space),
+                    ..
+                } => {
                     if show_welcome {
                         show_welcome = false;
                     }
                 }
-                Event::KeyDown { keycode: Some(Keycode::W), .. } => {
+                Event::KeyDown {
+                    keycode: Some(Keycode::W),
+                    ..
+                } => {
                     if !show_welcome {
                         pressed_keys.w = true;
                         paddles.left_movement = constants::MOVEMENT_UP;
                     }
-                },
-                Event::KeyDown { keycode: Some(Keycode::S), .. } => {
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => {
                     if !show_welcome {
                         pressed_keys.s = true;
                         paddles.left_movement = constants::MOVEMENT_DOWN;
                     }
-                },
-                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => {
                     if !show_welcome {
                         pressed_keys.up = true;
                         paddles.right_movement = constants::MOVEMENT_UP;
                     }
-                },
-                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
+                }
+                Event::KeyDown {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => {
                     if !show_welcome {
                         pressed_keys.down = true;
                         paddles.right_movement = constants::MOVEMENT_DOWN;
                     }
-                },
-                Event::KeyUp { keycode: Some(Keycode::W), .. } => pressed_keys.w = false,
-                Event::KeyUp { keycode: Some(Keycode::S), .. } => pressed_keys.s = false,
-                Event::KeyUp { keycode: Some(Keycode::Up), .. } => pressed_keys.up = false,
-                Event::KeyUp { keycode: Some(Keycode::Down), .. } => pressed_keys.down = false,
+                }
+                Event::KeyUp {
+                    keycode: Some(Keycode::W),
+                    ..
+                } => pressed_keys.w = false,
+                Event::KeyUp {
+                    keycode: Some(Keycode::S),
+                    ..
+                } => pressed_keys.s = false,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Up),
+                    ..
+                } => pressed_keys.up = false,
+                Event::KeyUp {
+                    keycode: Some(Keycode::Down),
+                    ..
+                } => pressed_keys.down = false,
                 _ => {}
             }
         }
-        
+
         if !show_welcome {
             if !pressed_keys.w && !pressed_keys.s {
                 paddles.left_movement = 0;
@@ -133,7 +163,7 @@ fn main() {
             if paddles.left + paddles.left_movement < paddles::Paddles::TOP {
                 paddles.left_movement = 0;
             }
-            
+
             if paddles.right + paddles.right_movement > paddles::Paddles::BOTTOM {
                 paddles.right_movement = 0;
             }
