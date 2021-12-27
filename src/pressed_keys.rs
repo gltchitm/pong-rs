@@ -2,5 +2,5 @@ pub struct PressedKeys {
     pub w: bool,
     pub s: bool,
     pub up: bool,
-    pub down: bool
+    pub down: bool,
 }

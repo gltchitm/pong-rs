@@ -9,13 +9,14 @@ use sdl2::video::Window;
 pub struct Paddles {
     pub left: i32,
     pub right: i32,
-    pub left_movement: i32,
-    pub right_movement: i32
+    pub left_velocity: i32,
+    pub right_velocity: i32,
 }
 
 impl Paddles {
-    const PADDLE_WIDTH: i32 = 15;
-    const PADDLE_HEIGHT: i32 = 200;
+    pub const PADDLE_WIDTH: i32 = 15;
+    pub const PADDLE_HEIGHT: i32 = 200;
+    pub const VELOCITY: i32 = 23;
     pub const TOP: i32 = PADDING;
     pub const CENTER: i32 = WINDOW_WIDTH / 2 - Paddles::PADDLE_HEIGHT / 2;
     pub const BOTTOM: i32 = WINDOW_HEIGHT - Paddles::PADDLE_HEIGHT - PADDING;
@@ -25,7 +26,7 @@ impl Paddles {
             x,
             y,
             Paddles::PADDLE_WIDTH as u32,
-            Paddles::PADDLE_HEIGHT as u32
+            Paddles::PADDLE_HEIGHT as u32,
         );
         canvas.fill_rect(rect).unwrap();
     }
@@ -35,20 +36,18 @@ impl Paddles {
         Paddles::draw_paddle(
             WINDOW_WIDTH - Paddles::PADDLE_WIDTH - PADDING,
             self.right,
-            canvas
+            canvas,
         );
         canvas.set_draw_color(Color::BLACK);
     }
     pub fn ball_does_collide_with_left_paddle(&self, ball: &Ball) -> bool {
-        PADDING + Paddles::PADDLE_WIDTH < ball.x + Ball::RADIUS
-            && PADDING + Paddles::PADDLE_WIDTH * 2 > ball.x
-            && self.left < ball.y + Ball::RADIUS
-            && self.left + Paddles::PADDLE_HEIGHT > ball.y
+        ball.x < PADDING * 2 + Paddles::PADDLE_WIDTH + Ball::RADIUS
+            && ball.y + Ball::RADIUS > self.left
+            && ball.y - Ball::RADIUS < self.left + Paddles::PADDLE_HEIGHT
     }
     pub fn ball_does_collide_with_right_paddle(&self, ball: &Ball) -> bool {
-        WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH) < ball.x + Ball::RADIUS
-            && (WINDOW_WIDTH - (PADDING + Paddles::PADDLE_WIDTH)) * 2 > ball.x
-            && self.right < ball.y + Ball::RADIUS
-            && self.right + Paddles::PADDLE_HEIGHT > ball.y
+        ball.x > WINDOW_WIDTH - PADDING * 2 - Paddles::PADDLE_WIDTH - Ball::RADIUS
+            && ball.y + Ball::RADIUS > self.right
+            && ball.y - Ball::RADIUS < self.right + Paddles::PADDLE_HEIGHT
     }
 }

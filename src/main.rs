@@ -5,21 +5,24 @@ mod pressed_keys;
 mod scoreboard;
 mod welcome;
 
+use ball::Ball;
+use constants::{
+    PADDING, TICKS_UNTIL_START, TICK_DURATION, WINDOW_HEIGHT, WINDOW_TITLE, WINDOW_WIDTH,
+};
+use paddles::Paddles;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
-use std::time::Duration;
+use sdl2::rect::Point;
+use std::thread::sleep;
+use std::time::{Duration, Instant};
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window(
-            constants::WINDOW_TITLE,
-            constants::WINDOW_WIDTH as u32,
-            constants::WINDOW_HEIGHT as u32
-        )
+        .window(WINDOW_TITLE, WINDOW_WIDTH as u32, WINDOW_HEIGHT as u32)
         .position_centered()
         .build()
         .unwrap();
@@ -31,47 +34,37 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut paddles = paddles::Paddles {
-        left: paddles::Paddles::CENTER,
-        right: paddles::Paddles::CENTER,
-        left_movement: 0,
-        right_movement: 0
+    let mut paddles = Paddles {
+        left: Paddles::CENTER,
+        right: Paddles::CENTER,
+        left_velocity: 0,
+        right_velocity: 0,
     };
-    let mut ball = ball::Ball {
-        x: ball::Ball::X_CENTER,
-        y: ball::Ball::Y_CENTER,
-        x_movement: ball::Ball::rand_movement(),
-        y_movement: ball::Ball::rand_movement()
+    let mut ball = Ball {
+        x: Ball::X_CENTER,
+        y: Ball::Y_CENTER,
+        x_velocity: Ball::rand_velocity(),
+        y_velocity: Ball::rand_velocity(),
     };
     let mut scoreboard = scoreboard::Scoreboard {
         left_score: 0,
-        right_score: 0
+        right_score: 0,
     };
     let mut pressed_keys = pressed_keys::PressedKeys {
         w: false,
         s: false,
         up: false,
-        down: false
+        down: false,
     };
 
     let mut show_welcome = true;
 
+    let mut tick: u128 = 0;
+
     'pong: loop {
+        let tick_instant = Instant::now();
+
         canvas.clear();
-
-        if !show_welcome {
-            paddles.left += paddles.left_movement;
-            paddles.right += paddles.right_movement;
-            paddles.draw_paddles(&mut canvas);
-
-            ball.x += ball.x_movement;
-            ball.y += ball.y_movement;
-            ball.draw_ball(&mut canvas);
-
-            scoreboard.draw_scoreboard(&mut canvas);
-        } else {
-            welcome::draw_welcome(&mut canvas);
-        }
 
         for event in event_pump.poll_iter() {
             match event {
@@ -80,9 +73,7 @@ fn main() {
                     keycode: Some(Keycode::Space),
                     ..
                 } => {
-                    if show_welcome {
-                        show_welcome = false;
-                    }
+                    show_welcome = false;
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::W),
@@ -90,7 +81,7 @@ fn main() {
                 } => {
                     if !show_welcome {
                         pressed_keys.w = true;
-                        paddles.left_movement = constants::MOVEMENT_UP;
+                        paddles.left_velocity = -Paddles::VELOCITY;
                     }
                 }
                 Event::KeyDown {
@@ -99,7 +90,7 @@ fn main() {
                 } => {
                     if !show_welcome {
                         pressed_keys.s = true;
-                        paddles.left_movement = constants::MOVEMENT_DOWN;
+                        paddles.left_velocity = Paddles::VELOCITY;
                     }
                 }
                 Event::KeyDown {
@@ -108,7 +99,7 @@ fn main() {
                 } => {
                     if !show_welcome {
                         pressed_keys.up = true;
-                        paddles.right_movement = constants::MOVEMENT_UP;
+                        paddles.right_velocity = -Paddles::VELOCITY;
                     }
                 }
                 Event::KeyDown {
@@ -117,7 +108,7 @@ fn main() {
                 } => {
                     if !show_welcome {
                         pressed_keys.down = true;
-                        paddles.right_movement = constants::MOVEMENT_DOWN;
+                        paddles.right_velocity = Paddles::VELOCITY;
                     }
                 }
                 Event::KeyUp {
@@ -140,68 +131,114 @@ fn main() {
             }
         }
 
-        if !show_welcome {
+        if show_welcome {
+            welcome::draw_welcome(&mut canvas);
+        } else {
             if !pressed_keys.w && !pressed_keys.s {
-                paddles.left_movement = 0;
+                paddles.left_velocity = 0;
             } else if pressed_keys.w && !pressed_keys.s {
-                paddles.left_movement = constants::MOVEMENT_UP;
+                paddles.left_velocity = -Paddles::VELOCITY;
             } else if pressed_keys.s && !pressed_keys.w {
-                paddles.left_movement = constants::MOVEMENT_DOWN;
+                paddles.left_velocity = Paddles::VELOCITY;
             }
 
             if !pressed_keys.up && !pressed_keys.down {
-                paddles.right_movement = 0;
+                paddles.right_velocity = 0;
             } else if pressed_keys.up && !pressed_keys.down {
-                paddles.right_movement = constants::MOVEMENT_UP;
+                paddles.right_velocity = -Paddles::VELOCITY;
             } else if pressed_keys.down && !pressed_keys.up {
-                paddles.right_movement = constants::MOVEMENT_DOWN;
+                paddles.right_velocity = Paddles::VELOCITY;
             }
 
-            if paddles.left + paddles.left_movement > paddles::Paddles::BOTTOM {
-                paddles.left_movement = 0;
-            }
-            if paddles.left + paddles.left_movement < paddles::Paddles::TOP {
-                paddles.left_movement = 0;
+            if !show_welcome {
+                tick += 1;
+
+                paddles.left = (paddles.left + paddles.left_velocity)
+                    .clamp(PADDING, WINDOW_HEIGHT - Paddles::PADDLE_HEIGHT - PADDING);
+                paddles.right = (paddles.right + paddles.right_velocity)
+                    .clamp(PADDING, WINDOW_HEIGHT - Paddles::PADDLE_HEIGHT - PADDING);
+
+                let ticks_until_start_sixth = TICKS_UNTIL_START / 6;
+
+                if (tick >= ticks_until_start_sixth && tick <= ticks_until_start_sixth * 2)
+                    || (tick >= ticks_until_start_sixth * 3 && tick <= ticks_until_start_sixth * 4)
+                    || (tick >= ticks_until_start_sixth * 5 && tick <= ticks_until_start_sixth * 6)
+                {
+                    ball.draw_arrow(&mut canvas);
+                } else if tick > TICKS_UNTIL_START {
+                    ball.x += ball.x_velocity;
+                    ball.y += ball.y_velocity;
+                }
+
+                scoreboard.draw_scoreboard(&mut canvas);
             }
 
-            if paddles.right + paddles.right_movement > paddles::Paddles::BOTTOM {
-                paddles.right_movement = 0;
+            if paddles.left + paddles.left_velocity > -Paddles::BOTTOM {
+                paddles.left_velocity = 0;
             }
-            if paddles.right + paddles.right_movement < paddles::Paddles::TOP {
-                paddles.right_movement = 0;
+            if paddles.left + paddles.left_velocity < -Paddles::TOP {
+                paddles.left_velocity = 0;
+            }
+
+            if paddles.right + paddles.right_velocity > -Paddles::BOTTOM {
+                paddles.right_velocity = 0;
+            }
+            if paddles.right + paddles.right_velocity < -Paddles::TOP {
+                paddles.right_velocity = 0;
             }
 
             if paddles.ball_does_collide_with_left_paddle(&ball) {
-                if ball.x_movement < 0 {
-                    ball.x -= ball.x_movement;
-                    ball.x_movement *= -1;
+                if ball.x_velocity < 0 {
+                    ball.x -= ball.x_velocity;
+                    ball.x_velocity *= -1;
                 }
             } else if paddles.ball_does_collide_with_right_paddle(&ball) {
-                if ball.x_movement > 0 {
-                    ball.x -= ball.x_movement;
-                    ball.x_movement *= -1;
+                if ball.x_velocity > 0 {
+                    ball.x -= ball.x_velocity;
+                    ball.x_velocity *= -1;
                 }
             }
 
-            if ball.y < (constants::PADDING + ball::Ball::RADIUS) {
-                ball.y = constants::PADDING + ball::Ball::RADIUS;
-                ball.y_movement *= -1;
-            } else if ball.y > constants::WINDOW_HEIGHT - constants::PADDING - ball::Ball::RADIUS {
-                ball.y = constants::WINDOW_HEIGHT - constants::PADDING - ball::Ball::RADIUS;
-                ball.y_movement *= -1;
+            if ball.y < (PADDING + Ball::RADIUS) {
+                ball.y = PADDING + Ball::RADIUS;
+                ball.y_velocity *= -1;
+            } else if ball.y > WINDOW_HEIGHT - PADDING - Ball::RADIUS {
+                ball.y = WINDOW_HEIGHT - PADDING - Ball::RADIUS;
+                ball.y_velocity *= -1;
             }
 
-            if ball.x < ball::Ball::RADIUS * 2 {
+            if ball.x < Ball::RADIUS * 2 {
+                tick = 0;
                 scoreboard.right_score += 1;
                 ball.reset();
-            } else if ball.x > constants::WINDOW_WIDTH - ball::Ball::RADIUS * 2 {
+            } else if ball.x > WINDOW_WIDTH - Ball::RADIUS * 2 {
+                tick = 0;
                 scoreboard.left_score += 1;
                 ball.reset();
             }
+            paddles.draw_paddles(&mut canvas);
+            ball.draw_ball(&mut canvas);
+        }
+
+        let center = WINDOW_HEIGHT / 2 - Ball::RADIUS / 2;
+        if !show_welcome {
+            canvas.set_draw_color(Color::WHITE);
+            canvas
+                .draw_line(Point::new(center, 0), Point::new(center, WINDOW_HEIGHT))
+                .unwrap();
+            canvas.set_draw_color(Color::BLACK);
         }
 
         canvas.present();
 
-        std::thread::sleep(Duration::new(0, 1_000_000_000 / constants::FPS as u32));
+        let elapsed_ms = tick_instant.elapsed().as_millis();
+        let time_until_next_tick: i128 = TICK_DURATION - i128::try_from(elapsed_ms).unwrap();
+        if time_until_next_tick < 0 {
+            continue;
+        }
+
+        sleep(Duration::from_millis(
+            time_until_next_tick.try_into().unwrap(),
+        ));
     }
 }
