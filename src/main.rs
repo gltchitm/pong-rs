@@ -17,6 +17,40 @@ use sdl2::rect::Point;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
 
+fn default_paddles() -> Paddles {
+    Paddles {
+        left: Paddles::CENTER,
+        right: Paddles::CENTER,
+        left_velocity: 0,
+        right_velocity: 0,
+    }
+}
+
+fn default_ball() -> Ball {
+    Ball {
+        x: Ball::X_CENTER,
+        y: Ball::Y_CENTER,
+        x_velocity: Ball::rand_velocity(),
+        y_velocity: Ball::rand_velocity(),
+    }
+}
+
+fn default_scoreboard() -> scoreboard::Scoreboard {
+    scoreboard::Scoreboard {
+        left_score: 0,
+        right_score: 0,
+    }
+}
+
+fn default_pressed_keys() -> pressed_keys::PressedKeys {
+    pressed_keys::PressedKeys {
+        w: false,
+        s: false,
+        up: false,
+        down: false,
+    }
+}
+
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -34,28 +68,10 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
 
-    let mut paddles = Paddles {
-        left: Paddles::CENTER,
-        right: Paddles::CENTER,
-        left_velocity: 0,
-        right_velocity: 0,
-    };
-    let mut ball = Ball {
-        x: Ball::X_CENTER,
-        y: Ball::Y_CENTER,
-        x_velocity: Ball::rand_velocity(),
-        y_velocity: Ball::rand_velocity(),
-    };
-    let mut scoreboard = scoreboard::Scoreboard {
-        left_score: 0,
-        right_score: 0,
-    };
-    let mut pressed_keys = pressed_keys::PressedKeys {
-        w: false,
-        s: false,
-        up: false,
-        down: false,
-    };
+    let mut paddles = default_paddles();
+    let mut ball = default_ball();
+    let mut scoreboard = default_scoreboard();
+    let mut pressed_keys = default_pressed_keys();
 
     let mut show_welcome = true;
 
@@ -127,6 +143,17 @@ fn main() {
                     keycode: Some(Keycode::Down),
                     ..
                 } => pressed_keys.down = false,
+                Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
+                    paddles = default_paddles();
+                    ball = default_ball();
+                    scoreboard = default_scoreboard();
+                    pressed_keys = default_pressed_keys();
+                    tick = 0;
+                    show_welcome = true;
+                }
                 _ => {}
             }
         }
@@ -216,6 +243,7 @@ fn main() {
                 scoreboard.left_score += 1;
                 ball.reset();
             }
+
             paddles.draw_paddles(&mut canvas);
             ball.draw_ball(&mut canvas);
         }
