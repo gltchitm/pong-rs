@@ -61,6 +61,8 @@ fn main() {
         .build()
         .unwrap();
 
+    sdl2::hint::set("SDL_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR", "0");
+
     let mut canvas = window.into_canvas().build().unwrap();
     canvas.set_draw_color(Color::BLACK);
     canvas.clear();
